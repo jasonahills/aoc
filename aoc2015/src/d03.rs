@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use nom::branch::alt;
 use nom::bytes::complete::tag;
-use nom::combinator::map_res;
+use nom::combinator::map;
 use nom::multi::many1;
 use nom::IResult;
 
@@ -15,10 +15,10 @@ pub enum Direction {
 }
 
 fn direction(input: &str) -> IResult<&str, Direction> {
-  let up = map_res(tag("^"), |_| Ok::<Direction, ()>(Direction::Up));
-  let down = map_res(tag("v"), |_| Ok::<Direction, ()>(Direction::Down));
-  let left = map_res(tag("<"), |_| Ok::<Direction, ()>(Direction::Left));
-  let right = map_res(tag(">"), |_| Ok::<Direction, ()>(Direction::Right));
+  let up = map(tag("^"), |_| Direction::Up);
+  let down = map(tag("v"), |_| Direction::Down);
+  let left = map(tag("<"), |_| Direction::Left);
+  let right = map(tag(">"), |_| Direction::Right);
   alt((up, down, left, right))(input)
 }
 

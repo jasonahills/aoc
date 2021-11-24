@@ -1,7 +1,7 @@
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::character::complete::{alpha1, digit1};
-use nom::combinator::map_res;
+use nom::combinator::{map, map_res};
 use nom::multi::{many0, many1};
 use nom::sequence::{delimited, tuple};
 use nom::IResult;
@@ -61,7 +61,7 @@ impl Instruction {
 }
 
 fn identifier(input: &str) -> IResult<&str, Id> {
-  map_res(alpha1, |s: &str| Ok::<Id, ()>(s.to_string()))(input)
+  map(alpha1, |s: &str| s.to_string())(input)
 }
 
 // TODO: is there an easy way to get `nom::number::complete::u16` to work for me.  The type checker is having trouble with the error type on it in the `tuple` combinator.
