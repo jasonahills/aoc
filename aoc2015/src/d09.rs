@@ -7,15 +7,6 @@ use nom::sequence::{delimited, tuple};
 use nom::IResult;
 use std::collections::HashMap;
 
-// AlphaCentauri to Snowdin = 66
-// AlphaCentauri to Tambi = 28
-// AlphaCentauri to Faerun = 60
-// AlphaCentauri to Norrath = 34
-// AlphaCentauri to Straylight = 34
-// AlphaCentauri to Tristram = 3
-// AlphaCentauri to Arbre = 108
-// Snowdin to Tambi = 22
-
 type DistanceEntry = (City, City, u32);
 type City = String;
 type Distances = HashMap<(City, City), u32>;
