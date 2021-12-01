@@ -9,11 +9,8 @@ use nom::IResult;
 #[derive(Debug, Eq, PartialEq)]
 pub struct Depth(u32);
 
-fn depth(input: &str) -> IResult<&str, Depth> {
-  map(map_res(digit1, |s: &str| s.parse::<u32>()), Depth)(input)
-}
-
-pub fn depths(input: &str) -> IResult<&str, Vec<Depth>> {
+pub fn parse(input: &str) -> IResult<&str, Vec<Depth>> {
+  let depth = map(map_res(digit1, |s: &str| s.parse::<u32>()), Depth);
   many1(terminated(depth, multispace0))(input)
 }
 
@@ -43,7 +40,7 @@ mod test {
   fn test_parse() {
     let input = "123
 321";
-    assert_eq!(depths(input).unwrap(), ("", vec![Depth(123), Depth(321)]))
+    assert_eq!(parse(input).unwrap(), ("", vec![Depth(123), Depth(321)]))
   }
 
   #[test]
@@ -51,11 +48,11 @@ mod test {
     let input = "123
 321
 123";
-    let ds = depths(input).unwrap().1;
+    let ds = parse(input).unwrap().1;
     assert_eq!(p1(ds), 1);
 
     let input = std::fs::read_to_string("./inputs/d01.txt").unwrap();
-    let ds = depths(&input).unwrap().1;
+    let ds = parse(&input).unwrap().1;
     assert_eq!(p1(ds), 1624);
   }
 
@@ -66,11 +63,11 @@ mod test {
 123
 321
 123";
-    let ds = depths(input).unwrap().1;
+    let ds = parse(input).unwrap().1;
     assert_eq!(p2(ds), 1);
 
     let input = std::fs::read_to_string("./inputs/d01.txt").unwrap();
-    let ds = depths(&input).unwrap().1;
+    let ds = parse(&input).unwrap().1;
     assert_eq!(p2(ds), 1653);
   }
 }
