@@ -1,10 +1,9 @@
-use ndarray::Array2;
 use nom::character::complete::{char as parse_char, digit1, multispace0, space0};
 use nom::combinator::{map, map_res};
 use nom::multi::{count, many1, separated_list1};
 use nom::sequence::{delimited, terminated};
 use nom::IResult;
-use std::convert::TryInto;
+use std::convert::{identity, TryInto};
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Bingo {
@@ -50,11 +49,19 @@ impl Board {
       .copied()
   }
 
-  // fn has_victory(&self) -> bool {
-  //   let row_victory = self.marked.iter().any(|row| row.iter().all(|b| b));
-  //   let column_victory =
-  //   row_victory || column_victory
-  // }
+  fn marked_rows<'a>(&'a self) -> impl Iterator<Item = impl Iterator<Item = bool> + 'a> + 'a {
+    self.marked.iter().map(|r| r.iter().copied())
+  }
+
+  fn marked_cols<'a>(&'a self) -> impl Iterator<Item = impl Iterator<Item = bool> + 'a> + 'a {
+    let marked = &self.marked;
+    (0..5).map(move |col_num| (0..5).map(move |row_num| marked[row_num][col_num]))
+  }
+
+  fn has_victory(&self) -> bool {
+    self.marked_rows().any(|mut r| r.all(identity))
+      || self.marked_cols().any(|mut r| r.all(identity))
+  }
 }
 
 // I can't seem to get the out-of-the-box numerical parsers to work well on strs
@@ -91,12 +98,32 @@ pub fn parse(input: &str) -> IResult<&str, Bingo> {
   Ok((input, Bingo { draws, boards }))
 }
 
-pub fn p1(input: Bingo) -> usize {
-  0
+pub fn p1(mut input: Bingo) -> u32 {
+  for draw in input.draws {
+    for board in input.boards.iter_mut() {
+      if board.mark(draw) && board.has_victory() {
+        return board.unmarked().sum::<u32>() * draw;
+      }
+    }
+  }
+  panic!("no solution")
 }
 
-pub fn p2(input: Bingo) -> usize {
-  0
+pub fn p2(mut input: Bingo) -> u32 {
+  let scored = input
+    .boards
+    .iter_mut()
+    .map(|board| {
+      for (i, draw) in input.draws.iter().enumerate() {
+        if board.mark(*draw) && board.has_victory() {
+          return (board.unmarked().sum::<u32>() * *draw, i);
+        }
+      }
+      panic!("no solution")
+    })
+    .max_by_key(|(_, i)| *i)
+    .unwrap();
+  scored.0
 }
 
 #[cfg(test)]
@@ -135,23 +162,23 @@ mod test {
 
   #[test]
   fn test_p1() {
-    let input = "";
+    let input = TEST_INPUT;
     let parsed = parse(input).unwrap().1;
-    assert_eq!(p1(parsed), 0);
+    assert_eq!(p1(parsed), 4512);
 
-    let input = std::fs::read_to_string("./inputs/d00.txt").unwrap();
+    let input = std::fs::read_to_string("./inputs/d04.txt").unwrap();
     let parsed = parse(&input).unwrap().1;
-    assert_eq!(p1(parsed), 0);
+    assert_eq!(p1(parsed), 50008);
   }
 
   #[test]
   fn test_p2() {
-    let input = "";
+    let input = TEST_INPUT;
     let parsed = parse(input).unwrap().1;
-    assert_eq!(p2(parsed), 0);
+    assert_eq!(p2(parsed), 1924);
 
-    let input = std::fs::read_to_string("./inputs/d00.txt").unwrap();
+    let input = std::fs::read_to_string("./inputs/d04.txt").unwrap();
     let parsed = parse(&input).unwrap().1;
-    assert_eq!(p2(parsed), 0);
+    assert_eq!(p2(parsed), 17408);
   }
 }
