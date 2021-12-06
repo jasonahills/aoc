@@ -1,3 +1,8 @@
+/// # Reflection
+///
+/// In part two, you actually only need to compare the first number of the first triple with the third number of the second triple.  If you use this approach, p2 only differs from p1 only in how much you skip in the second iterator.
+///
+/// I had the amusing experience of half-way realizing this while I was writing my tests.  Somehow, I did not make the small additional leap to realizing that I could use this in my implementation.  My eye was too much on the goal, I guess.  On the other hand, I suppose that "make it work" comes before "make it fast", so it was reasonable to do a slower straightforward solution over one with a clever trick.  (Ok, the trick isn't that clever after all; but still!)
 use itertools::Itertools;
 use nom::character::complete::{digit1, multispace0};
 use nom::combinator::{map, map_res};
