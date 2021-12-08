@@ -37,7 +37,7 @@ impl School {
 pub fn parse(input: &str) -> IResult<&str, Vec<LanternFish>> {
   nom::multi::separated_list1(
     nom::bytes::complete::tag(","),
-    nom::combinator::map(crate::util::parse_u32, |u| LanternFish(u as u64)),
+    nom::combinator::map(crate::nom_prelude::parse_u32, |u| LanternFish(u as u64)),
   )(input)
 }
 

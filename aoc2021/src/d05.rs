@@ -1,4 +1,4 @@
-use crate::util::parse_u32;
+use crate::nom_prelude::parse_u32;
 use itertools::Itertools;
 use nom::bytes::complete::tag;
 use nom::character::complete::multispace0;

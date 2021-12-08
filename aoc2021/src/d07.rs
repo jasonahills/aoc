@@ -8,7 +8,7 @@ pub struct Crab(u32);
 pub fn parse(input: &str) -> IResult<&str, Vec<Crab>> {
   nom::multi::separated_list1(
     nom::bytes::complete::tag(","),
-    nom::combinator::map(crate::util::parse_u32, Crab),
+    nom::combinator::map(crate::nom_prelude::parse_u32, Crab),
   )(input)
 }
 

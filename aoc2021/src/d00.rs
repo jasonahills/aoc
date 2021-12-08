@@ -1,4 +1,4 @@
-use nom::IResult;
+use crate::nom_prelude::*;
 
 type InputItem = ();
 
