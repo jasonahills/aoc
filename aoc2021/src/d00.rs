@@ -18,6 +18,8 @@ pub fn p2(_xs: Vec<InputItem>) -> usize {
 mod test {
   use super::*;
 
+  const TEST_INPUT: &'static str = "";
+
   #[test]
   fn test_parse() {
     let input = "";
@@ -26,7 +28,7 @@ mod test {
 
   #[test]
   fn test_p1() {
-    let input = "";
+    let input = TEST_INPUT;
     let parsed = parse(input).unwrap().1;
     assert_eq!(p1(parsed), 0);
 
@@ -37,7 +39,7 @@ mod test {
 
   #[test]
   fn test_p2() {
-    let input = "";
+    let input = TEST_INPUT;
     let parsed = parse(input).unwrap().1;
     assert_eq!(p2(parsed), 0);
 
