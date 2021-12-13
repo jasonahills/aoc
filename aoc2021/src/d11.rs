@@ -49,7 +49,8 @@ impl OctoGrid {
       (x, y + 1),
       (x - 1, y + 1),
       (x - 1, y),
-    ].into_iter()
+    ]
+    .into_iter()
   }
 
   fn coords() -> impl Iterator<Item = Coord> {
@@ -134,7 +135,8 @@ mod test {
     let input = TEST_INPUT;
     let mut parsed = parse(input).unwrap().1;
 
-    let after_step_1 = parse("6594254334
+    let after_step_1 = parse(
+      "6594254334
     3856965822
     6375667284
     7252447257
@@ -143,11 +145,15 @@ mod test {
     3287952832
     7993992245
     5957959665
-    6394862637").unwrap().1;
+    6394862637",
+    )
+    .unwrap()
+    .1;
     parsed.step();
     assert_eq!(parsed, after_step_1);
 
-    let after_step_2 = parse("8807476555
+    let after_step_2 = parse(
+      "8807476555
     5089087054
     8597889608
     8485769600
@@ -156,7 +162,10 @@ mod test {
     6800005943
     0000007456
     9000000876
-    8700006848").unwrap().1;
+    8700006848",
+    )
+    .unwrap()
+    .1;
     parsed.step();
     assert_eq!(parsed, after_step_2);
   }
