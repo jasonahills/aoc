@@ -34,7 +34,7 @@ mod test {
     let parsed = parse(input).unwrap().1;
     assert_eq!(p1(parsed), 0);
 
-    let input = std::fs::read_to_string("./inputs/d.txt").unwrap();
+    let input = std::fs::read_to_string("./inputs/d00.txt").unwrap();
     let parsed = parse(&input).unwrap().1;
     assert_eq!(p1(parsed), 0);
   }
@@ -45,7 +45,7 @@ mod test {
     let parsed = parse(input).unwrap().1;
     assert_eq!(p2(parsed), 0);
 
-    let input = std::fs::read_to_string("./inputs/d.txt").unwrap();
+    let input = std::fs::read_to_string("./inputs/d00.txt").unwrap();
     let parsed = parse(&input).unwrap().1;
     assert_eq!(p2(parsed), 0);
   }
