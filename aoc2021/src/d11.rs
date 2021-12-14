@@ -13,7 +13,7 @@ impl OctoGrid {
     Ok(Self(arr))
   }
 
-  fn at(&self, (x, y): Coord) -> Option<u8> {
+  pub fn at(&self, (x, y): Coord) -> Option<u8> {
     if 0 <= x && x < 10 && 0 <= y && y < 10 {
       Some(self.0[(y as usize * 10) + x as usize])
     } else {
