@@ -38,26 +38,29 @@ impl std::fmt::Display for DisplayGrid {
 }
 
 fn fold_points(pts: HashSet<Point>, fold_instruction: FoldInstruction) -> HashSet<Point> {
-  pts.into_iter().map(|(x, y)| {
-    match fold_instruction {
+  pts
+    .into_iter()
+    .map(|(x, y)| match fold_instruction {
       FoldInstruction::Up(u) => (x, u - (u - y).abs()),
       FoldInstruction::Left(u) => (u - (u - x).abs(), y),
-    }
-  }).collect()
+    })
+    .collect()
 }
 
 pub fn parse(input: &str) -> IResult<&str, Instructions> {
   let point = separated_pair(parse_i32, tag(","), parse_i32);
-  let fold_instruction = map(tuple((alt((tag("fold along x="), tag("fold along y="))), parse_i32)), |(s, u)| {
-    match s {
+  let fold_instruction = map(
+    tuple((alt((tag("fold along x="), tag("fold along y="))), parse_i32)),
+    |(s, u)| match s {
       "fold along x=" => FoldInstruction::Left(u),
       "fold along y=" => FoldInstruction::Up(u),
       _ => panic!("incorrect tag"),
-    }
-  });
-  map(tuple((lines_of(point), lines_of(fold_instruction))), |(points, folds)| {
-    Instructions { points, folds }
-  })(input)
+    },
+  );
+  map(
+    tuple((lines_of(point), lines_of(fold_instruction))),
+    |(points, folds)| Instructions { points, folds },
+  )(input)
 }
 
 pub fn p1(instructions: Instructions) -> usize {
@@ -107,9 +110,16 @@ mod test {
     
     fold along y=7
     fold along x=2";
-    assert_eq!(parse(input).unwrap(), ("", Instructions {
-      points: vec![(6,10), (0,14)], folds: vec![FoldInstruction::Up(7), FoldInstruction::Left(2)],
-    }))
+    assert_eq!(
+      parse(input).unwrap(),
+      (
+        "",
+        Instructions {
+          points: vec![(6, 10), (0, 14)],
+          folds: vec![FoldInstruction::Up(7), FoldInstruction::Left(2)],
+        }
+      )
+    )
   }
 
   #[test]
@@ -127,20 +137,26 @@ mod test {
   fn test_p2() {
     let input = TEST_INPUT;
     let parsed = parse(input).unwrap().1;
-    assert_eq!(p2(parsed), "#####
+    assert_eq!(
+      p2(parsed),
+      "#####
 #...#
 #...#
 #...#
 #####
-");
+"
+    );
 
     let input = std::fs::read_to_string("./inputs/d13.txt").unwrap();
     let parsed = parse(&input).unwrap().1;
-    assert_eq!(p2(parsed), ".##....##..##..#..#.###...##..###..###.
+    assert_eq!(
+      p2(parsed),
+      ".##....##..##..#..#.###...##..###..###.
 #..#....#.#..#.#.#..#..#.#..#.#..#.#..#
 #.......#.#....##...###..#..#.#..#.###.
 #.......#.#....#.#..#..#.####.###..#..#
 #..#.#..#.#..#.#.#..#..#.#..#.#....#..#
-.##...##...##..#..#.###..#..#.#....###.");
+.##...##...##..#..#.###..#..#.#....###.\n"
+    );
   }
 }

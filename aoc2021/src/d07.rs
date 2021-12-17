@@ -72,6 +72,6 @@ mod test {
 
     let input = std::fs::read_to_string("./inputs/d07.txt").unwrap();
     let parsed = parse(&input).unwrap().1;
-    assert_eq!(p2(parsed), 96678103);
+    assert_eq!(p2(parsed), 96678050);
   }
 }

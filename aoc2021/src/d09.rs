@@ -114,6 +114,6 @@ mod test {
 
     let input = std::fs::read_to_string("./inputs/d09.txt").unwrap();
     let parsed = parse(&input).unwrap().1;
-    assert_eq!(p2(parsed), 0);
+    assert_eq!(p2(parsed), 1075536);
   }
 }

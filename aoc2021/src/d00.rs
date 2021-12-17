@@ -2,17 +2,17 @@
 
 use crate::nom_prelude::*;
 
-type InputItem = ();
+type Input = ();
 
-pub fn parse(input: &str) -> IResult<&str, Vec<InputItem>> {
+pub fn parse(input: &str) -> IResult<&str, Input> {
   unimplemented!()
 }
 
-pub fn p1(_xs: Vec<InputItem>) -> usize {
+pub fn p1(_input: Input) -> usize {
   0
 }
 
-pub fn p2(_xs: Vec<InputItem>) -> usize {
+pub fn p2(_input: Input) -> usize {
   0
 }
 
