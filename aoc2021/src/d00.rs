@@ -25,7 +25,7 @@ mod test {
   #[test]
   fn test_parse() {
     let input = "";
-    assert_eq!(parse(input).unwrap(), ("", vec![]))
+    assert_eq!(parse(input).unwrap(), ("", ()))
   }
 
   #[test]
