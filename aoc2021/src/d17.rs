@@ -1,7 +1,7 @@
 //! https://adventofcode.com/2021/day/17
 
 use crate::nom_prelude::*;
-use crate::util::V;
+use crate::vector::V;
 use itertools::Itertools;
 
 #[derive(Debug, PartialEq, Eq)]
