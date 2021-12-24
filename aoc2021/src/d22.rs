@@ -240,6 +240,7 @@ pub fn better_p2(input: Input) -> u64 {
     .map(|(i, z)| (*z, i))
     .collect::<HashMap<_, _>>();
 
+  // TODO: should have done these as vecs
   let x_indices_rev = xs
     .iter()
     .enumerate()
@@ -445,6 +446,6 @@ mod test {
 
     let input = std::fs::read_to_string("./inputs/d22.txt").unwrap();
     let parsed = parse(&input).unwrap().1;
-    assert_eq!(better_p2(parsed), 0);
+    assert_eq!(better_p2(parsed), 1334238660555542);
   }
 }
