@@ -22,7 +22,7 @@ impl Pawn {
     }
   }
 
-  pub fn room_entry_index(self) -> usize {
+  pub fn room_entrance_index(self) -> usize {
     match self {
       Self::A => 2,
       Self::B => 4,
@@ -44,7 +44,7 @@ impl Pawn {
 type Dist = u32;
 
 /// positions 0 - 10 are the hall
-/// positions 11 - 18 are the rooms
+/// positions 11 - 18 are the rooms; the evens are closest to the entrance.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub struct Cavern([Option<Pawn>; 19]);
 
@@ -53,8 +53,8 @@ impl Cavern {
     parse(
       "#############
 #...........#
-###B#C#A#D###
-  #B#C#D#A#
+###A#B#C#D###
+  #A#B#C#D#
   #########",
     )
     .unwrap()
@@ -68,40 +68,82 @@ impl Cavern {
     Self(new)
   }
 
-  pub fn neighbors(&self) -> Vec<(Cavern, Dist)> {
-    let mut ns = Vec::new();
+  pub fn possible_moves(&self) -> Vec<(Cavern, Dist)> {
+    let mut moves = Vec::new();
     for (i, v) in self.0.iter().enumerate() {
       if let Some(p) = v {
+        // println!("i {:?} {:?}", i, p);
         let cost = p.move_cost();
-        // hall left
-        if 0 < i && i <= 10 && self.0[i - 1].is_none() {
-          ns.push((self.mv(i, i - 1), cost));
-        }
-        // hall right
-        if 0 <= i && i < 10 && self.0[i + 1].is_none() {
-          ns.push((self.mv(i, i + 1), cost));
-        }
-        // room up
-        if 11 <= i && i % 2 == 0 && self.0[i - 1].is_none() {
-          ns.push((self.mv(i, i - 1), cost));
-        }
-        // room down
-        if 11 <= i && i % 2 == 1 && self.0[i + 1].is_none() {
-          ns.push((self.mv(i, i + 1), cost));
-        }
+        let in_hall = i <= 10;
         // room enter
-        if i == p.room_entry_index() && self.0[p.room_exit_index()].is_none() {
-          ns.push((self.mv(i, p.room_exit_index()), cost));
-        }
-        // room exit.
-        // Note that the entry and exits are exactly 10 off from each other, lol
-        if 11 < i && i % 2 == 0 && self.0[i - 10].is_none() {
-          ns.push((self.mv(i, i - 10), cost));
+        if in_hall {
+          let (open_path, spaces) = self.open_hall_path(i, p.room_entrance_index());
+          if open_path {
+            match self.0[p.room_exit_index() - 1..=p.room_exit_index()] {
+              [Some(pawn), None] if *p == pawn => {
+                // println!("first");
+                moves.push((self.mv(i, p.room_exit_index()), cost * (spaces + 1)));
+              }
+              [None, None] => {
+                // println!("second");
+                moves.push((self.mv(i, p.room_exit_index() - 1), cost * (spaces + 2)));
+              }
+              _ => (),
+            }
+          }
+        } else {
+          // exit near door
+          if i % 2 == 0 {
+            for j in [0, 1, 3, 5, 7, 9, 10] {
+              let (open_path, spaces) = self.open_hall_path_include_start(j, i - 10);
+              if open_path {
+                moves.push((self.mv(i, j), cost * (spaces + 1)));
+              }
+            }
+          }
+          // exit from back
+          if i % 2 == 1 && self.0[i + 1].is_none() {
+            for j in [0, 1, 3, 5, 7, 9, 10] {
+              let (open_path, spaces) = self.open_hall_path_include_start(j, i - 9);
+              if open_path {
+                moves.push((self.mv(i, j), cost * (spaces + 2)));
+              }
+            }
+          }
         }
       }
     }
-    ns
+    moves
   }
+
+  pub fn open_hall_path(&self, start: usize, end: usize) -> (bool, u32) {
+    if start < end {
+      (
+        self.0[start + 1..=end].iter().all(|e| e.is_none()),
+        (end - start) as u32,
+      )
+    } else {
+      (
+        self.0[end..=start - 1].iter().all(|e| e.is_none()),
+        (start - end) as u32,
+      )
+    }
+  }
+
+  pub fn open_hall_path_include_start(&self, start: usize, end: usize) -> (bool, u32) {
+    if start < end {
+      (
+        self.0[start..=end].iter().all(|e| e.is_none()),
+        (end - start) as u32,
+      )
+    } else {
+      (
+        self.0[end..=start].iter().all(|e| e.is_none()),
+        (start - end) as u32,
+      )
+    }
+  }
+
   // TODO: refactor out of today and d15.
   pub fn dijkstra(self) -> Dijkstra {
     let goal = Cavern::goal();
@@ -112,15 +154,18 @@ impl Cavern {
     entries.insert(self, (0, None));
     let mut current = self;
     loop {
+      if current.0[11..19].iter().filter(|i| i.is_some()).count() >= 7 {
+        // println!("current {:?} {}", visited.len(), current);
+      }
       if visited.len() % 10000 == 0 {
-        println!("visited {:?}", visited.len());
+        // println!("visited {:?} {:?}", visited.len(), current);
       }
       visited.insert(current);
       let current_dist = entries.get(&current).unwrap().0;
       if current == goal {
         return Dijkstra(entries);
       }
-      for (neighbor, delta) in current.neighbors() {
+      for (neighbor, delta) in current.possible_moves() {
         if !visited.contains(&neighbor) {
           let e = entries.entry(neighbor).or_insert((u32::MAX, None));
           let proposed_dist = current_dist + delta;
@@ -144,24 +189,86 @@ impl Cavern {
   }
 }
 
+impl std::fmt::Display for Cavern {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    let item = |x| match x {
+      Some(c) => format!("{:?}", c),
+      _ => ".".to_owned(),
+    };
+    write!(
+      f,
+      "#############
+#{}{}{}{}{}{}{}{}{}{}{}#
+###{}#{}#{}#{}###
+  #{}#{}#{}#{}#
+  #########",
+      item(self.0[0]),
+      item(self.0[1]),
+      item(self.0[2]),
+      item(self.0[3]),
+      item(self.0[4]),
+      item(self.0[5]),
+      item(self.0[6]),
+      item(self.0[7]),
+      item(self.0[8]),
+      item(self.0[9]),
+      item(self.0[10]),
+      item(self.0[12]),
+      item(self.0[14]),
+      item(self.0[16]),
+      item(self.0[18]),
+      item(self.0[11]),
+      item(self.0[13]),
+      item(self.0[15]),
+      item(self.0[17]),
+    )
+  }
+}
+
+// #D#C#B#A#
+//   #D#B#A#C#
+// pub struct ExpandedCavern();
+
+// impl From<Cavern> for ExpandedCavern {
+//   fn from(c: Cavern) -> ExpandedCavern {
+//     let new = [0; 19 + 8];
+//     for i in 0..11 {
+//       if i < 11 {
+//         new[i] = c[i];
+//       }
+//     }
+//     for
+//     for i in 0..4 {
+//       new
+//     }
+//     Self()
+//   }
+// }
+
 type Input = Cavern;
 
 pub struct Dijkstra(HashMap<Cavern, (u32, Option<Cavern>)>);
 
-pub fn parse_pawn(input: &str) -> IResult<&str, Pawn> {
-  map(alt((tag("A"), tag("B"), tag("C"), tag("D"))), |p| match p {
-    "A" => Pawn::A,
-    "B" => Pawn::B,
-    "C" => Pawn::C,
-    "D" => Pawn::D,
-    _ => panic!("non matching tag"),
-  })(input)
+pub fn parse_pawn(input: &str) -> IResult<&str, Option<Pawn>> {
+  map(
+    alt((tag("A"), tag("B"), tag("C"), tag("D"), tag("."))),
+    |p| match p {
+      "A" => Some(Pawn::A),
+      "B" => Some(Pawn::B),
+      "C" => Some(Pawn::C),
+      "D" => Some(Pawn::D),
+      "." => None,
+      _ => panic!("non matching tag"),
+    },
+  )(input)
 }
 
 pub fn parse(input: &str) -> IResult<&str, Input> {
   map(
     tuple((
-      tag("#############\n#...........#\n###"),
+      tag("#############\n#"),
+      many_m_n(11, 11, parse_pawn),
+      tag("#\n###"),
       parse_pawn,
       tag("#"),
       parse_pawn,
@@ -179,33 +286,20 @@ pub fn parse(input: &str) -> IResult<&str, Input> {
       parse_pawn,
       tag("#\n  #########"),
     )),
-    |(_, a1, _, b1, _, c1, _, d1, _, a2, _, b2, _, c2, _, d2, _)| {
-      Cavern([
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        Some(a2),
-        Some(a1),
-        Some(b2),
-        Some(b1),
-        Some(c2),
-        Some(c1),
-        Some(d2),
-        Some(d1),
-      ])
+    |(_, mut xs, _, a1, _, b1, _, c1, _, d1, _, a2, _, b2, _, c2, _, d2, _)| {
+      xs.append(&mut vec![a2, a1, b2, b1, c2, c1, d2, d1]);
+      let xs = xs.try_into().unwrap(); // some type pain around the error return time for `map_res`
+      Cavern(xs)
     },
   )(input)
 }
 
 pub fn p1(input: Input) -> u32 {
+  // let mut current = input.dijkstra().0.into_iter().last().unwrap().1 .1.unwrap();
+  // while let (dist, Some(c)) = input.dijkstra().0.get(&current).unwrap() {
+  //   println!("{} {}", dist, c);
+  //   current = *c;
+  // }
   input.dijkstra().0.get(&Cavern::goal()).unwrap().0
 }
 
@@ -243,6 +337,21 @@ mod test {
   }
 
   #[test]
+  fn test_possible_moves() {
+    let parsed = parse(
+      "#############
+#A..........#
+###.#.#.#.###
+  #A#.#.#.#
+  #########",
+    )
+    .unwrap()
+    .1;
+    println!("{:?}", parsed.possible_moves());
+    panic!("asdf");
+  }
+
+  #[test]
   fn test_p1() {
     let input = TEST_INPUT;
     let parsed = parse(input).unwrap().1;
@@ -250,7 +359,7 @@ mod test {
 
     let input = std::fs::read_to_string("./inputs/d23.txt").unwrap();
     let parsed = parse(&input).unwrap().1;
-    assert_eq!(p1(parsed), 0);
+    assert_eq!(p1(parsed), 11120);
   }
 
   #[test]
