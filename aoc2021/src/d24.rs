@@ -65,7 +65,7 @@ impl Alu {
         }
       }
       if matches!(inst, Inst::Inp(_)) {
-        println!("inst {:?} alu {:?}", inst, self);
+        // println!("inst {:?} alu {:?}", inst, self);
       }
     }
   }
@@ -130,12 +130,12 @@ pub fn parse(input: &str) -> IResult<&str, Input> {
   lines_of(inst)(input)
 }
 
-fn digits(mut n: i64) -> [i64; 14] {
-  let mut to_return = [0; 14];
-  for i in 0..14 {
+fn digits(mut n: i64) -> [i64; 7] {
+  let mut to_return = [0; 7];
+  for i in 0..7 {
     let d = n % 10;
     n /= 10;
-    to_return[13 - i] = d;
+    to_return[6 - i] = d;
   }
   to_return
 }
@@ -145,62 +145,39 @@ pub fn p1(insts: Input) -> i64 {
   // for my input, positions 3, 5, and 9 through 13 were div by 26 positions.
 
   // No need to left pad, as that would add a zero digit.
-  let mut n = 99999999999999;
-  // let n = 99989899988888_u64;
-  // let mut n = 99989899988888_u64;
-  // Assumingwe only need to play with the
-  // let n = 9999999_u64;
+  // the "bigger" steps can never fail to increase 26-fold, so they might as well be 9s.  Brute-forcing is now manageable.
+  // let mut n = 9999999_i64;
+  let mut n = 9999999_i64;
 
-  let start = std::time::Instant::now();
+  // let start = std::time::Instant::now();
   loop {
-    // let inputs: Vec<i64> = n
-    //   .to_string()
-    //   .split("")
-    //   .filter(|s| !s.is_empty())
-    //   .map(|d| d.parse::<i64>().unwrap())
-    //   .collect();
-
-    let inputs = digits(n);
-    // println!("digits {:?}", inputs);
-
-    n -= 1;
-
-    if n % 1_000_000 == 0 {
-      println!("{:?} {}", start.elapsed(), n);
+    let mut inputs = [9; 14];
+    let other_inputs = digits(n);
+    // only need to try different inputs where we call the "smaller" variant.
+    inputs[3] = other_inputs[0];
+    inputs[5] = other_inputs[1];
+    for i in 0..5 {
+      inputs[9 + i] = other_inputs[2 + i];
     }
-
+    n -= 1;
+    // println!("inputs {:?}", inputs);
+    if n < 0 {
+      panic!("tried them all");
+    }
     if inputs.iter().any(|v| *v == 0) {
       continue;
     }
-
-    // let mut alu = Alu::new();
-    // alu.run_program(&insts, inputs.clone());
-    // if alu.z == 0 {
-    //   return n;
-    // } else {
-    //   return 1;
-    // }
-    let inputs = inputs.clone().try_into().unwrap();
-    let out = my_program(inputs);
+    let inputs: [i64; 14] = inputs.clone().try_into().unwrap();
+    let out = my_program(inputs.clone());
     if out == 0 {
-      return n + 1;
+      return inputs
+        .into_iter()
+        .rev()
+        .enumerate()
+        .map(|(i, digit)| digit * (10_i64.pow(i as u32)))
+        .sum();
     }
-    // println!("my program output {} {} {:?}", out, alu.z, out == alu.z);
   }
-  // let inputs = "merrychristmas".split("").map(|c| {
-  //   'a' => 0,
-  //   'b'
-  //   'c'
-  //   'd'
-  //   'e'
-  //   'f'
-  //   'g'
-  //   'h'
-  //   'i'
-  //   'j'
-  // });
-  // let mut alu = Alu::new();
-  // alu.run_program(&insts, inputs);
 }
 
 pub fn p2(_input: Input) -> usize {
@@ -208,6 +185,24 @@ pub fn p2(_input: Input) -> usize {
 }
 
 pub fn bigger(w: i64, v1: i64, v2: i64, mut z: i64) -> i64 {
+  // inp w
+  // mul x 0
+  // add x z
+  // mod x 26
+  // div z 1
+  // add x 15
+  // eql x w
+  // eql x 0
+  // mul y 0
+  // add y 25
+  // mul y x
+  // add y 1
+  // mul z y
+  // mul y 0
+  // add y w
+  // add y 15
+  // mul y x
+  // add z y
   if w != (z % 26) + v1 {
     z *= 26;
   } else {
@@ -218,51 +213,112 @@ pub fn bigger(w: i64, v1: i64, v2: i64, mut z: i64) -> i64 {
 }
 
 pub fn smaller(w: i64, v1: i64, v2: i64, mut z: i64) -> i64 {
+  // inp w
+  // mul x 0
+  // add x z
+  // mod x 26
+  // div z 26
+  // add x -10
+  // eql x w
+  // eql x 0
+  // mul y 0
+  // add y 25
+  // mul y x
+  // add y 1
+  // mul z y
+  // mul y 0
+  // add y w
+  // add y 1
+  // mul y x
+  // add z y
+  println!("smaller {}", w);
+  let x = z % 26;
   z /= 26;
-  if w != (z % 26) + v1 {
+  if w != x + v1 {
     z *= 26;
+    z += v2 + w + 1;
   } else {
-    // println!("and hit this");
+    println!("and hit this");
+    panic!("I want to hit this");
   }
-  z += v2 + w;
   z
 }
 
 pub fn my_program(xs: [i64; 14]) -> i64 {
-  let z = bigger(xs[0], 15, 15, 0);
-  // println!("{} {}", xs[0], z);
-  let z = bigger(xs[1], 12, 5, z);
-  // println!("{} {}", xs[1], z);
-  let z = bigger(xs[2], 13, 6, z);
-  // println!("{} {}", xs[2], z);
-  let z = smaller(xs[3], -14, 7, z);
-  // println!("{} {}", xs[3], z);
-  let z = bigger(xs[4], 15, 9, z);
-  // println!("{} {}", xs[4], z);
-  let z = smaller(xs[5], -7, 6, z);
-  // println!("{} {}", xs[5], z);
-  let z = bigger(xs[6], 14, 14, z);
-  // println!("{} {}", xs[6], z);
-  let z = bigger(xs[7], 15, 3, z);
-  // println!("{} {}", xs[7], z);
-  let z = bigger(xs[8], 15, 1, z);
-  // println!("{} {}", xs[8], z);
-  let z = smaller(xs[9], -7, 3, z);
-  // println!("{} {}", xs[9], z);
-  let z = smaller(xs[10], -8, 4, z);
-  // println!("{} {}", xs[10], z);
-  let z = smaller(xs[11], -7, 6, z);
-  // println!("{} {}", xs[11], z);
-  let z = smaller(xs[12], -5, 7, z);
-  // println!("{} {}", xs[12], z);
-  let z = smaller(xs[13], -10, 1, z);
-  // println!("{} {}", xs[12], z);
+  // Think of encoding a base 26 number.  Each time we go "bigger", we multiply by 26 and add our input and the number from our input.
+  // Because there are seven bigger steps and seven smaller steps, we need all the smaller steps to not have the mult by 26 step; our life is easier.
+  let z = bigger(xs[0], 15, 15, 0); // z = xs[0] + 15
+  let z = bigger(xs[1], 12, 5, z); // z = xs[0] + 15 | xs[1] + 5
+  let z = bigger(xs[2], 13, 6, z); // z = xs[0] + 15 | xs[1] + 5 | xs[2] + 6
+  let z = smaller(xs[3], -14, 7, z); // choose x[3] = xs[2] + 6 - 14, then z = xs[0] + 15 | xs[1] + 5
+  let z = bigger(xs[4], 15, 9, z); // z = xs[0] + 15 | xs[1] + 5 | xs[4] + 9
+  let z = smaller(xs[5], -7, 6, z); // choose x[5] = xs[4] + 9 - 7, then z = xs[0] + 15 | xs[1] + 5
+  let z = bigger(xs[6], 14, 14, z); // z = xs[0] + 15 | xs[1] + 5 | xs[6] + 14
+  let z = bigger(xs[7], 15, 3, z); // z = xs[0] + 15 | xs[1] + 5 | xs[6] + 14 | xs[7] + 3
+  let z = bigger(xs[8], 15, 1, z); // z = xs[0] + 15 | xs[1] + 5 | xs[6] + 14 | xs[7] + 3 | xs[8] + 1
+  let z = smaller(xs[9], -7, 3, z); // choose xs[9] = xs[8] + 1 - 7
+  let z = smaller(xs[10], -8, 4, z); // choose xs[10] = xs[7] + 3 - 8
+  let z = smaller(xs[11], -7, 6, z); // choose xs[11] = xs[6] + 14 - 7
+  let z = smaller(xs[12], -5, 7, z); // choose xs[12] = xs[1] + 5 - 5
+  let z = smaller(xs[13], -10, 1, z); // choose xs[13] = xs[0] + 15 - 10
+
+  // constraints
+  // x[3] + 8 = xs[2]  => 1, 9
+  // x[5] = xs[4] + 2
+  // x[9] + 6 =x[8]
+  // xs[10] + 5 = xs[7]
+  // xs[11] = xs[6] + 7
+  // xs[12] = xs[1]
+  // xs[13] = xs[0] + 5
+  // 49917929934999
+  // 11911316711816
+  z
+}
+
+pub fn my_mini_program(first_input: i64, third_input: i64) -> i64 {
+  // let xs = [9, 9, 9];
+  let z = 0;
+  let z = bigger(first_input, 12, 5, z); // z = xs[0] + 5
+  let z = bigger(9, 13, 6, z); // z = xs[1] + 5 | xs[2] + 6
+  let z = smaller(third_input, -14, 7, z); // choose xs[3] == xs[1] + 5 - 14
+  z
+}
+
+pub fn my_mini_program2(x1: i64, x2: i64, x3: i64, x4: i64) -> i64 {
+  let z = bigger(x1, 15, 15, 0); // z = xs[0] + 15
+  let z = bigger(x2, 12, 5, z); // z = xs[0] + 15 | xs[1] + 5
+  let z = bigger(x3, 13, 6, z); // z = xs[0] + 15 | xs[1] + 5 | xs[2] + 6
+  let z = smaller(x4, -14, 7, z);
   z
 }
 
 #[cfg(test)]
 mod test {
   use super::*;
+
+  #[test]
+  fn test_mini2() {
+    for i in 1..10 {
+      for j in 1..10 {
+        for k in 1..10 {
+          for l in 1..10 {
+            my_mini_program2(i, j, k, l);
+          }
+        }
+      }
+    }
+  }
+
+  #[test]
+  fn test_mini() {
+    for i in 1..10 {
+      for j in 1..10 {
+        println!("my mini_program {} {} {}", i, j, my_mini_program(i, j));
+      }
+    }
+
+    panic!("asf")
+  }
 
   const TEST_INPUT: &'static str = "inp w
   add z w
